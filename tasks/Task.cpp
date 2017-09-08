@@ -19,10 +19,15 @@ Task::~Task()
 
 bool Task::configureHook()
 {
-    if (! TaskBase::configureHook())
+    if (!TaskBase::configureHook())
         return false;
-    integrationWindowSize = _integration_window.value();
-    slipRatioBuffer = std::vector<double>(integrationWindowSize,0.0);
+    //integrationWindowSize = _integration_window.value();
+    integrationWindowSize = 100;
+    slipRatioBuffer.resize(integrationWindowSize);
+    for (int i=0; i<integrationWindowSize;i ++)
+    {
+        slipRatioBuffer[i]=0.0;
+    }
     bufferIndex = 0;
     havePreviousPose = false;
     haveMotionCommand= false;
@@ -30,13 +35,14 @@ bool Task::configureHook()
 }
 bool Task::startHook()
 {
-    if (! TaskBase::startHook())
+    if (!TaskBase::startHook())
         return false;
     return true;
 }
 void Task::updateHook()
 {
     TaskBase::updateHook();
+
     if (_pose.read(pose) == RTT::NewData)
     {
         // in the beginning it might happen, that we do not have a motion command or previousPose
@@ -44,9 +50,13 @@ void Task::updateHook()
         {
             double deltaPose = calcDeltaPose(pose,previousPose);
             double deltaTime = calcDeltaTime(pose,previousPose);
+            std::cout << "deltaPose: " << deltaPose << "  deltaTime: " << deltaTime << std::endl;
             if (motionCommand.translation != 0.0)
             {
-                slipRatioBuffer[bufferIndex] = deltaPose/(motionCommand.translation * deltaTime);
+                double slip = deltaPose/(fabs(motionCommand.translation) * deltaTime);
+                std::cout << " slip: " << slip <<std::endl;
+                slip = (slip > 1 ? 1 : slip);
+                slipRatioBuffer[bufferIndex] = 1-slip;
                 bufferIndex = (bufferIndex+1)%integrationWindowSize;
             }
         }
@@ -73,7 +83,8 @@ double Task::calcDeltaPose(base::samples::RigidBodyState cur, base::samples::Rig
 
 double Task::calcDeltaTime(base::samples::RigidBodyState cur, base::samples::RigidBodyState prev)
 {
-    return cur.time.toSeconds() - cur.time.toSeconds();
+    std::cout << cur.time.toMilliseconds() << " <- cur <- time in milliseconds -> prev ->  " << prev.time.toMilliseconds() << std::endl;
+    return (double(cur.time.toMilliseconds() - prev.time.toMilliseconds())/1000.0);
 }
 void Task::errorHook()
 {
