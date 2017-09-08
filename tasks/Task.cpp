@@ -1,6 +1,7 @@
 #include "Task.hpp"
 
 using namespace slippage_estimator;
+namespace LM = locomotion_switcher;
 
 Task::Task(std::string const& name)
     : TaskBase(name)
