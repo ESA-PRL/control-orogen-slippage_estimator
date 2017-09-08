@@ -6,13 +6,13 @@ import_types_from "base"
 task_context "Task" do
     needs_configuration
 
-    property "integration_time", "double"
+    property "integration_window", "int"
 
     input_port "motion_command", "base/commands/Motion2D"
     input_port "locomotion_mode", "locomotion_switcher/LocomotionMode"
     input_port "pose", "base/samples/RigidBodyState"
 
-    output_port "slippage", "double"
+    output_port "slip_ratio", "double"
 
-    periodic 0.1
+    port_driven "pose"
 end
