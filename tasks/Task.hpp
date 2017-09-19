@@ -11,6 +11,7 @@ namespace slippage_estimator{
     protected:
         std::vector<double> slipRatioBuffer;
         int integrationWindowSize;
+	int turnSpotWindowSize;
         int bufferIndex; // current position in the circular buffer of slip ratios
 
         base::samples::RigidBodyState pose;
@@ -19,7 +20,13 @@ namespace slippage_estimator{
 
         double calcDeltaPose(base::samples::RigidBodyState,base::samples::RigidBodyState);
         double calcDeltaTime(base::samples::RigidBodyState,base::samples::RigidBodyState);
+	bool isPoseValid(base::samples::RigidBodyState);
+	
+	double ww_velocity;
+	double pose_samples_period;
+	LM::LocomotionMode locomotion_mode;
 
+	bool turnSpot; 
         bool havePreviousPose; // true iff at least two pose samples were read
         bool haveMotionCommand; // true iff we ever read a motion command
 
