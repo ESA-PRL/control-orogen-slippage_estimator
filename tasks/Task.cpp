@@ -1,7 +1,7 @@
 #include "Task.hpp"
 
 using namespace slippage_estimator;
-namespace LM = locomotion_switcher;
+using namespace locomotion_switcher;
 
 Task::Task(std::string const& name)
     : TaskBase(name)
@@ -133,7 +133,7 @@ double Task::calcDeltaTime(base::samples::RigidBodyState cur, base::samples::Rig
 
 bool Task::isPoseValid(base::samples::RigidBodyState pose)
 {
-    if ( isnan(pose.position(0)) || isnan(pose.position(1)) || isnan(pose.position(2)) )
+    if ( std::isnan(pose.position(0)) || std::isnan(pose.position(1)) || std::isnan(pose.position(2)) )
         return false;
     return true;
 }
