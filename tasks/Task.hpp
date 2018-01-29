@@ -2,7 +2,7 @@
 #define SLIPPAGE_ESTIMATOR_TASK_TASK_HPP
 
 #include "slippage_estimator/TaskBase.hpp"
-#include <math.h>
+#include <cmath>
 
 namespace slippage_estimator{
     class Task : public TaskBase
@@ -24,11 +24,13 @@ namespace slippage_estimator{
 	
 	double ww_velocity;
 	double pose_samples_period;
-	LM::LocomotionMode locomotion_mode;
+	locomotion_switcher::LocomotionMode locomotion_mode;
 
-	bool turnSpot; 
+	bool turn_spot;
         bool havePreviousPose; // true iff at least two pose samples were read
         bool haveMotionCommand; // true iff we ever read a motion command
+
+        int counter;
 
     public:
         Task(std::string const& name = "slippage_estimator::Task");
