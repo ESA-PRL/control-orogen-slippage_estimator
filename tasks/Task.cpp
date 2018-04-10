@@ -28,6 +28,7 @@ bool Task::configureHook()
     locomotion_mode=DRIVING;
     integrationWindowSize = 100;
     turnSpotWindowSize = 50;
+    wheelWalkingWindowSize = 50;
     slipRatioBuffer.resize(integrationWindowSize);
     for (int i=0; i<integrationWindowSize;i ++)
     {
@@ -48,11 +49,8 @@ void Task::updateHook()
 {
     TaskBase::updateHook();
 
-    if (_locomotion_mode.read(locomotion_mode) == RTT::NewData)
-    {
-        std::cout << "Current Locomotion Mode is " << locomotion_mode << std::endl;
-    }
-    
+    _locomotion_mode.read(locomotion_mode);
+
     if (_pose.read(pose) == RTT::NewData)
     {
         if (isPoseValid(pose))
@@ -62,25 +60,31 @@ void Task::updateHook()
             {
                 double deltaPose = calcDeltaPose(pose,previousPose);
                 double deltaTime = calcDeltaTime(pose,previousPose);
-                std::cout << "deltaPose: " << deltaPose << "  deltaTime: " << deltaTime << std::endl;
-                if (deltaTime>(pose_samples_period-0.001)) // pose samples should arrive at a certain frequency. If we get a burst of pose samples with almost zero delta time, it's better not to make slip estimations, it will be noise divided by zero.
+                //std::cout << "deltaPose: " << deltaPose << "  deltaTime: " << deltaTime << std::endl;
+                // pose samples should arrive at a certain frequency.
+                // If we get a burst of pose samples with almost zero delta time,
+                // it's better not to make slip estimations, it will be noise divided by zero.
+                if (0.5*pose_samples_period < deltaTime && deltaTime < 2*pose_samples_period)
                 {
                     if (locomotion_mode == DRIVING)
                     {
                         if (motionCommand.translation != 0.0)
                         {
-                            if (turn_spot)  // Transitioning from Spot Turn to normal driving. Reduce the counter and unset the flag if enough time is passed.
+                            // Transitioning from Spot Turn or Wheel Walking to normal driving.
+                            // Reduce the counter and unset the flag if enough time is passed.
+                            if (turn_spot || wheel_walking)
                             {
                                 counter--;
                                 if (counter < 1)
                                 {
                                     turn_spot = false;
-                                }                            
-                            } 
+                                    wheel_walking = false;
+                                }
+                            }
                             else
                             {
                                 double slip = 1 - deltaPose/(fabs(motionCommand.translation) * deltaTime);
-                                std::cout << "DR slip: " << slip << std::endl;
+                                //std::cout << "DR slip: " << slip << std::endl;
                                 slip = (slip < 0 ? 0 : slip);
                                 slipRatioBuffer[bufferIndex] = slip;
                                 bufferIndex = (bufferIndex+1)%integrationWindowSize;
@@ -95,11 +99,27 @@ void Task::updateHook()
                     }
                     else if (locomotion_mode == WHEEL_WALKING)
                     {
-                        double slip = 1 - deltaPose/(ww_velocity * deltaTime);
-                        std::cout << "WW slip: " << slip << std::endl;
-                        slip = (slip < 0 ? 0 : slip);
-                        slipRatioBuffer[bufferIndex] = slip;
-                        bufferIndex = (bufferIndex+1)%integrationWindowSize;
+                        // reset slip buffer if transitioning to wheel walking
+                        if (!wheel_walking)
+                        {
+                            for (int i=0; i<integrationWindowSize;i ++)
+                            {
+                                slipRatioBuffer[i]=0.0;
+                            }
+                            bufferIndex = 0;
+
+                            wheel_walking = true;
+                            counter = wheelWalkingWindowSize;
+                        }
+
+                        if (motionCommand.translation != 0.0)
+                        {
+                            double slip = 1 - deltaPose/(ww_velocity * deltaTime);
+                            //std::cout << "WW slip: " << slip << std::endl;
+                            slip = (slip < 0 ? 0 : slip);
+                            slipRatioBuffer[bufferIndex] = slip;
+                            bufferIndex = (bufferIndex+1)%integrationWindowSize;
+                        }
                     }
                 }
             }
@@ -127,7 +147,7 @@ double Task::calcDeltaPose(base::samples::RigidBodyState cur, base::samples::Rig
 
 double Task::calcDeltaTime(base::samples::RigidBodyState cur, base::samples::RigidBodyState prev)
 {
-    std::cout << cur.time.toMilliseconds() << " <- cur <- time in milliseconds -> prev ->  " << prev.time.toMilliseconds() << std::endl;
+    //std::cout << cur.time.toMilliseconds() << " <- cur <- time in milliseconds -> prev ->  " << prev.time.toMilliseconds() << std::endl;
     return (double(cur.time.toMilliseconds() - prev.time.toMilliseconds())/1000.0);
 }
 
