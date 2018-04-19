@@ -21,14 +21,12 @@ bool Task::configureHook()
 {
     if (!TaskBase::configureHook())
         return false;
-    //integrationWindowSize = _integration_window.value();
-    //ww_velocity = _ww_velocity.value(); // [m/s] translational body velocity in WW mode
-    pose_samples_period = 0.1; // 10Hz
-    ww_velocity = 0.02;
+    integrationWindowSize = _integration_window.value();
+    turnSpotWindowSize = _turn_spot_window.value();
+    wheelWalkingWindowSize = _ww_window.value();
+    ww_velocity = _ww_body_velocity.value(); // [m/s] translational body velocity in WW mode
+    pose_samples_period = _pose_samples_period.value(); // 10Hz with vicon. With viso2 it is alternating between 0.266 and 0.533. Why??
     locomotion_mode=DRIVING;
-    integrationWindowSize = 100;
-    turnSpotWindowSize = 50;
-    wheelWalkingWindowSize = 50;
     slipRatioBuffer.resize(integrationWindowSize);
     for (int i=0; i<integrationWindowSize;i ++)
     {
@@ -60,11 +58,11 @@ void Task::updateHook()
             {
                 double deltaPose = calcDeltaPose(pose,previousPose);
                 double deltaTime = calcDeltaTime(pose,previousPose);
-                //std::cout << "deltaPose: " << deltaPose << "  deltaTime: " << deltaTime << std::endl;
+                std::cout << "deltaPose: " << deltaPose << "  deltaTime: " << deltaTime << std::endl;
                 // pose samples should arrive at a certain frequency.
                 // If we get a burst of pose samples with almost zero delta time,
                 // it's better not to make slip estimations, it will be noise divided by zero.
-                if (0.5*pose_samples_period < deltaTime && deltaTime < 2*pose_samples_period)
+                if (0.5*pose_samples_period < deltaTime && deltaTime < 3*pose_samples_period)
                 {
                     if (locomotion_mode == DRIVING)
                     {

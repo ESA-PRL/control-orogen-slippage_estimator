@@ -7,6 +7,10 @@ task_context "Task" do
     needs_configuration
 
     property "integration_window", "int"
+    property "turn_spot_window", "int"
+    property "ww_window", "int"
+    property "pose_samples_period", "double"
+    property "ww_body_velocity", "double"
 
     input_port "motion_command", "base/commands/Motion2D"
     input_port "locomotion_mode", "locomotion_switcher/LocomotionMode"
