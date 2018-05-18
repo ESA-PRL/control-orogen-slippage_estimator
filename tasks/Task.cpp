@@ -58,7 +58,7 @@ void Task::updateHook()
             {
                 double deltaPose = calcDeltaPose(pose,previousPose);
                 double deltaTime = calcDeltaTime(pose,previousPose);
-                std::cout << "deltaPose: " << deltaPose << "  deltaTime: " << deltaTime << std::endl;
+                LOG_DEBUG_S << "deltaPose: " << deltaPose << "  deltaTime: " << deltaTime;
                 // pose samples should arrive at a certain frequency.
                 // If we get a burst of pose samples with almost zero delta time,
                 // it's better not to make slip estimations, it will be noise divided by zero.
@@ -82,7 +82,7 @@ void Task::updateHook()
                             else
                             {
                                 double slip = 1 - deltaPose/(fabs(motionCommand.translation) * deltaTime);
-                                //std::cout << "DR slip: " << slip << std::endl;
+                                LOG_DEBUG_S << "DR slip: " << slip;
                                 slip = (slip < 0 ? 0 : slip);
                                 slipRatioBuffer[bufferIndex] = slip;
                                 bufferIndex = (bufferIndex+1)%integrationWindowSize;
@@ -113,7 +113,7 @@ void Task::updateHook()
                         if (motionCommand.translation != 0.0)
                         {
                             double slip = 1 - deltaPose/(ww_velocity * deltaTime);
-                            //std::cout << "WW slip: " << slip << std::endl;
+                            LOG_DEBUG_S << "WW slip: " << slip;
                             slip = (slip < 0 ? 0 : slip);
                             slipRatioBuffer[bufferIndex] = slip;
                             bufferIndex = (bufferIndex+1)%integrationWindowSize;
@@ -145,7 +145,6 @@ double Task::calcDeltaPose(base::samples::RigidBodyState cur, base::samples::Rig
 
 double Task::calcDeltaTime(base::samples::RigidBodyState cur, base::samples::RigidBodyState prev)
 {
-    //std::cout << cur.time.toMilliseconds() << " <- cur <- time in milliseconds -> prev ->  " << prev.time.toMilliseconds() << std::endl;
     return (double(cur.time.toMilliseconds() - prev.time.toMilliseconds())/1000.0);
 }
 
