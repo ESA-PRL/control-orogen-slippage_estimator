@@ -5,9 +5,6 @@
 #include <cmath>
 #include <base-logging/Logging.hpp>
 
-#define BASE_LOG_DISABLE
-#define BASE_LOG_NAMESPACE slippage_estimator
-
 namespace slippage_estimator{
     class Task : public TaskBase
     {
